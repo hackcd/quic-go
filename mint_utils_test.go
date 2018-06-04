@@ -95,6 +95,7 @@ var _ = Describe("Packing and unpacking Initial packets", func() {
 			buf := &bytes.Buffer{}
 			err := hdr.Write(buf, protocol.PerspectiveClient, ver)
 			Expect(err).ToNot(HaveOccurred())
+			hdrLen := buf.Len()
 			payloadStartIndex := buf.Len()
 			aeadCl, err := crypto.NewNullAEAD(protocol.PerspectiveClient, connID, ver)
 			Expect(err).ToNot(HaveOccurred())
@@ -103,7 +104,8 @@ var _ = Describe("Packing and unpacking Initial packets", func() {
 				Expect(err).ToNot(HaveOccurred())
 			}
 			raw := buf.Bytes()
-			return aeadCl.Seal(raw[payloadStartIndex:payloadStartIndex], raw[payloadStartIndex:], hdr.PacketNumber, raw[:payloadStartIndex])
+			data := aeadCl.Seal(raw[payloadStartIndex:payloadStartIndex], raw[payloadStartIndex:], hdr.PacketNumber, raw[:payloadStartIndex])
+			return append(raw[:hdrLen], data...)
 		}
 
 		It("unpacks a packet", func() {
